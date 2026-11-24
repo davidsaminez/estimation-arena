@@ -1,6 +1,9 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Estimation Arena</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
@@ -33,7 +36,8 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);transition:background-color .25s,color .25s}
+.themebtn{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
 h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.5px}
@@ -213,13 +217,15 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding-block:10px 26
 @media (max-width:700px){.slots,.opts{grid-template-columns:minmax(0,1fr)}.diffs{grid-template-columns:minmax(0,1fr)}.points{grid-template-columns:repeat(4,minmax(0,1fr))}.podium{gap:6px}.pod .big{font-size:22px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+</head>
+<body>
 
 <div class="wrap topbar">
   <div class="brand">
     <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div><h1>Estimation Arena</h1><p>Tabuleiro de estimativas ágeis para até 4 equipes</p></div>
   </div>
-  <div class="chips" id="topchips"></div>
+  <button class="btn ghost themebtn" id="themeBtn" aria-pressed="false">🌙 Modo noturno</button>
 </div>
 
 <!-- ======================= CONFIGURAÇÃO ======================= -->
@@ -768,5 +774,17 @@ function endGame(reason){
 $("againBtn").onclick=startGame;
 $("setupBtn").onclick=()=>{renderSetup();show("setup")};
 
+/* ---------- Tema diurno / noturno ---------- */
+const themeBtn=$("themeBtn");
+function currentTheme(){const a=document.documentElement.getAttribute("data-theme");if(a==="dark"||a==="light")return a;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}
+function labelTheme(){const t=currentTheme();themeBtn.textContent=t==="dark"?"☀️ Modo diurno":"🌙 Modo noturno";themeBtn.setAttribute("aria-pressed",String(t==="dark"));themeBtn.title=t==="dark"?"Mudar para o tema claro":"Mudar para o tema escuro"}
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t);labelTheme()}
+const savedTheme=store.get("ea-theme",null);
+if(savedTheme==="dark"||savedTheme==="light")applyTheme(savedTheme);else labelTheme();
+themeBtn.onclick=()=>{const t=currentTheme()==="dark"?"light":"dark";applyTheme(t);store.set("ea-theme",t)};
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",labelTheme);
+
 renderSetup();
 </script>
+</body>
+</html>
