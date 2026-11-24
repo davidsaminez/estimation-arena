@@ -1,0 +1,772 @@
+<meta charset="utf-8">
+<title>Estimation Arena</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: tabuleiro em cruz (15×15) à esquerda, painel da jogada à direita; empilha no celular. */
+:root{
+  --bg:#e9eef4; --surface:#ffffff; --surface2:#f4f7fb; --ink:#1c2333; --muted:#5b6579; --line:#d3dbe6;
+  --board:#fbfcfe; --cell:#ffffff; --accent:#27348b; --accent-ink:#ffffff;
+  --t0:#e0522b; --t1:#14967f; --t2:#e8a900; --t3:#3567a8;
+  --t0s:#fbe3db; --t1s:#d5efe9; --t2s:#fbefc8; --t3s:#dbe5f3;
+  --good:#1f7a4f; --goodbg:#e3f4ea; --warn:#a85d00; --warnbg:#fff1dc; --bad:#b23a48;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px; --shadow:0 10px 30px #1c233314;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141c; --surface:#1a2030; --surface2:#222a3c; --ink:#e7ebf3; --muted:#9ba5b8; --line:#2f3850;
+  --board:#1f2738; --cell:#283247; --accent:#8f9cf5; --accent-ink:#10141c;
+  --t0:#f0714c; --t1:#2fbfa4; --t2:#f2c12e; --t3:#6c9be0;
+  --t0s:#4a2a22; --t1s:#1d4440; --t2s:#4a3e15; --t3s:#24344d;
+  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d;
+  --shadow:0 10px 30px #00000055; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141c; --surface:#1a2030; --surface2:#222a3c; --ink:#e7ebf3; --muted:#9ba5b8; --line:#2f3850;
+  --board:#1f2738; --cell:#283247; --accent:#8f9cf5; --accent-ink:#10141c;
+  --t0:#f0714c; --t1:#2fbfa4; --t2:#f2c12e; --t3:#6c9be0;
+  --t0s:#4a2a22; --t1s:#1d4440; --t2s:#4a3e15; --t3s:#24344d;
+  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d;
+  --shadow:0 10px 30px #00000055; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.5px}
+h2{font-size:22px;font-weight:800}
+h3{font-size:16px;font-weight:700}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;font-weight:800;color:var(--muted)}
+.muted{color:var(--muted)}
+small{font-size:13px}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+
+.topbar{padding-block:18px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:12px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;box-shadow:var(--shadow);flex:none}
+.logo i:nth-child(1){background:var(--t0)}.logo i:nth-child(2){background:var(--t1)}.logo i:nth-child(3){background:var(--t3)}.logo i:nth-child(4){background:var(--t2)}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+
+.btn{border:0;border-radius:11px;padding:11px 16px;font-weight:800;cursor:pointer;background:var(--accent);color:var(--accent-ink);transition:transform .12s}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.big{font-size:18px;padding:14px 22px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:20px;min-width:0}
+
+/* ---------- Setup ---------- */
+.setup{display:grid;gap:18px;padding-bottom:40px}
+.diffs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.diff{border:2px solid var(--line);background:var(--surface2);border-radius:14px;padding:14px;text-align:left;cursor:pointer;display:grid;gap:4px}
+.diff b{font-family:var(--display);font-size:19px}
+.diff span{font-size:13px;color:var(--muted)}
+.diff[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+label.f{display:grid;gap:5px;font-weight:700;font-size:13px}
+.slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+.slot{border:2px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px;background:var(--surface);position:relative}
+.slot.on{border-color:var(--tc)}
+.slot.off .slotbody{opacity:.45;pointer-events:none}
+.slothead{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.slothead .sw{display:flex;align-items:center;gap:8px;font-weight:800}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--tc);flex:none}
+.slotbody{display:grid;gap:10px}
+.photoRow{display:flex;gap:12px;align-items:center}
+.photoRow .av{flex:none}
+.filebtn{position:relative;overflow:hidden;display:inline-flex}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.chars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.char{border:2px solid var(--line);border-radius:12px;padding:8px 4px;background:var(--surface2);cursor:pointer;display:grid;justify-items:center;gap:2px;font-size:12px;line-height:1.2;text-align:center}
+.char .em{font-size:28px;line-height:1}
+.char[aria-pressed="true"]{border-color:var(--tc);background:var(--surface)}
+.char:disabled{opacity:.35;cursor:not-allowed}
+.perk{font-size:12.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:7px 10px}
+.toggle{appearance:none;width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;padding:0;border:0;flex:none}
+.toggle:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
+.toggle:checked{background:var(--tc)}
+.toggle:checked:after{left:21px}
+.err{color:var(--bad);font-weight:700;min-height:1.4em}
+
+/* ---------- Avatar ---------- */
+.av{--s:40px;width:var(--s);height:var(--s);border-radius:50%;background:var(--tc);border:3px solid var(--tc);display:inline-grid;place-items:center;overflow:hidden;position:relative;flex:none;box-shadow:0 2px 0 #0002}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av .em{font-size:calc(var(--s) * .55);line-height:1}
+.av.pic .em{display:none}
+
+/* ---------- Game ---------- */
+.hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding-block:4px 14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:700}
+.timer{font-family:var(--display);font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:2px 14px;min-width:120px;text-align:center}
+.timer small{display:block;font-family:var(--body);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:-4px;font-weight:800}
+.timer.low{border-color:var(--bad);color:var(--bad)}
+.game{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:18px;align-items:start;padding-bottom:40px}
+.leftcol{display:grid;gap:14px;min-width:0}
+
+.board{display:grid;grid-template-columns:repeat(15,1fr);grid-template-rows:repeat(15,1fr);aspect-ratio:1;width:100%;max-width:100%;background:var(--board);border:3px solid var(--ink);border-radius:16px;padding:4px;gap:2px;box-shadow:var(--shadow)}
+.cell{background:var(--cell);border:1px solid var(--line);border-radius:4px;position:relative;display:grid;place-items:center;min-width:0;min-height:0}
+.cell.start{background:var(--tc);border-color:var(--tc)}
+.cell.home{background:var(--tcs);border-color:var(--tc)}
+.cell .mk{position:absolute;font-size:clamp(8px,1.6vw,14px);font-weight:800;color:var(--muted);pointer-events:none}
+.cell.start .mk{color:#fff}
+.cell.event{background:var(--warnbg)}
+.cell.event .mk{color:var(--warn)}
+.base{background:var(--tc);border-radius:12px;padding:8%;display:grid;min-width:0;min-height:0}
+.base .in{background:var(--surface);border-radius:9px;display:grid;place-items:center;align-content:center;gap:3px;text-align:center;padding:6px;min-width:0;overflow:hidden}
+.base .in b{font-family:var(--display);font-size:clamp(11px,1.7vw,16px);line-height:1.1;overflow-wrap:anywhere}
+.base .in small{font-size:clamp(9px,1.2vw,12px);color:var(--muted);line-height:1.2;overflow-wrap:anywhere}
+.base.empty{opacity:.35}
+.base.turn .in{outline:3px dashed var(--tc);outline-offset:-6px}
+.center{border-radius:6px;background:conic-gradient(from -45deg,var(--t1) 0 25%,var(--t2) 0 50%,var(--t3) 0 75%,var(--t0) 0);display:grid;place-items:center;position:relative}
+.tk{display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;z-index:1}
+.token{flex:0 0 78%;aspect-ratio:1;border-radius:50%;background:var(--tc);border:2px solid #fff;box-shadow:0 2px 4px #0005;display:grid;place-items:center;overflow:hidden;font-size:clamp(9px,1.7vw,16px);line-height:1}
+.token img{width:100%;height:100%;object-fit:cover}
+.tk:has(.token + .token) .token{flex-basis:52%;margin:0 -8%}
+.center .tk{flex-wrap:wrap;gap:4px;padding:10%}
+.center .token{flex-basis:34%}
+.token.active{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.15);box-shadow:0 0 0 4px var(--tc)}}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);display:inline-grid;place-items:center;font-style:normal;font-size:11px;font-weight:800}
+
+.ranking{display:grid;gap:6px}
+.rk{display:grid;grid-template-columns:26px auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--surface2)}
+.rk.now{outline:2px solid var(--tc)}
+.rk .pos{font-family:var(--display);font-weight:800;font-size:18px;text-align:center}
+.rk .nm{min-width:0}
+.rk .nm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk .nm small{color:var(--muted)}
+.rk .pts{font-family:var(--display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+
+.play{position:relative;display:grid;gap:14px}
+.turnhead{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:var(--tcs)}
+.turnhead h2{font-size:24px}
+.die{width:86px;height:86px;border-radius:18px;background:var(--surface);border:3px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:12px;gap:4px;box-shadow:0 4px 0 var(--ink)}
+.die i{border-radius:50%}
+.die i.p{background:var(--ink)}
+.die.rolling{animation:shake .5s linear}
+@keyframes shake{25%{transform:rotate(14deg)}50%{transform:rotate(-12deg)}75%{transform:rotate(8deg)}}
+.msgs{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.msgs li{padding:9px 12px;border-radius:10px;background:var(--surface2);font-size:14px}
+.msgs li.ev{background:var(--warnbg)}
+.msgs li.good{background:var(--goodbg)}
+
+.storycard{border:2px solid var(--tc);border-radius:16px;padding:16px;display:grid;gap:10px;background:var(--surface)}
+.tag{display:inline-flex;padding:3px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:12px;font-weight:800;margin:0 5px 5px 0}
+.desc{font-size:16px;margin:0}
+details{border:1px solid var(--line);border-radius:11px;padding:8px 12px;background:var(--surface2)}
+summary{cursor:pointer;font-weight:800;font-size:14px}
+details ul{margin:6px 0 2px;padding-left:20px}
+details li{margin:2px 0;font-size:14px}
+.hint{background:var(--goodbg);border-radius:11px;padding:9px 12px;font-size:14px}
+.points{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.pt{border:2px solid var(--line);background:var(--surface);border-radius:11px;padding:10px 0;font-family:var(--display);font-size:20px;font-weight:800;cursor:pointer;color:var(--accent)}
+.pt:hover:not(:disabled),.pt.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pt:disabled{cursor:not-allowed;opacity:.5}
+.pt.sel:disabled{opacity:1}
+.eventbox{background:var(--warnbg);border:2px dashed var(--warn);border-radius:13px;padding:12px 14px}
+.eventbox strong{color:var(--warn)}
+.result{background:var(--goodbg);border-radius:13px;padding:12px 14px}
+.result table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.result td{padding:4px 0;border-bottom:1px solid var(--line)}
+.result td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.pausecover{position:absolute;inset:-6px;background:var(--surface);border-radius:14px;display:grid;place-items:center;align-content:center;gap:12px;text-align:center;z-index:5}
+
+.scale{width:100%;border-collapse:collapse;font-size:13.5px}
+.scale td,.scale th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.scale th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;background:#0b0f18aa;display:grid;place-items:center;z-index:50;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .panel{max-width:620px;width:100%;max-height:100%;overflow:auto}
+.sp{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.sp input{width:auto;accent-color:var(--accent)}
+.sp span{flex:1;min-width:0}
+.sp b.v{font-variant-numeric:tabular-nums}
+
+/* ---------- End ---------- */
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;margin:18px 0}
+.pod{border-radius:16px;background:var(--tcs);border:2px solid var(--tc);padding:14px 8px;display:grid;justify-items:center;gap:6px;text-align:center;min-width:0}
+.pod .medal{font-family:var(--display);font-weight:800;font-size:28px;line-height:1}
+.pod b{font-family:var(--display);font-size:18px;overflow-wrap:anywhere}
+.pod .big{font-family:var(--display);font-size:30px;font-weight:800;line-height:1}
+.pod.p1{padding-block:26px}
+.tablewrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
+.tbl th,.tbl td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.tbl td.n{font-variant-numeric:tabular-nums;font-weight:800}
+.who{display:flex;gap:9px;align-items:center}
+
+footer{text-align:center;color:var(--muted);font-size:12px;padding-block:10px 26px}
+
+@media (max-width:980px){.game{grid-template-columns:minmax(0,1fr)}.board{max-width:600px;margin:0 auto}}
+@media (max-width:700px){.slots,.opts{grid-template-columns:minmax(0,1fr)}.diffs{grid-template-columns:minmax(0,1fr)}.points{grid-template-columns:repeat(4,minmax(0,1fr))}.podium{gap:6px}.pod .big{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div><h1>Estimation Arena</h1><p>Tabuleiro de estimativas ágeis para até 4 equipes</p></div>
+  </div>
+  <div class="chips" id="topchips"></div>
+</div>
+
+<!-- ======================= CONFIGURAÇÃO ======================= -->
+<main class="wrap setup" id="setup">
+  <section class="panel">
+    <div class="eyebrow">Passo 1</div>
+    <h2>Escolha a dificuldade</h2>
+    <div class="diffs" id="diffs">
+      <button class="diff" data-diff="facil" aria-pressed="false"><b>Fácil</b><span>Só histórias de baixa e média complexidade. Mostra a faixa de SP esperada e aceita erros de uma posição na escala com boa pontuação.</span></button>
+      <button class="diff" data-diff="medio" aria-pressed="true"><b>Médio</b><span>Todas as histórias. Mostra o nível de complexidade, sem dicas de faixa. Pontuação padrão.</span></button>
+      <button class="diff" data-diff="dificil" aria-pressed="false"><b>Difícil</b><span>Complexidade oculta. Só o acerto exato rende muito; capturas no tabuleiro tiram mais casas.</span></button>
+    </div>
+    <div class="opts">
+      <label class="f" for="timerMode">Timer de 5 minutos
+        <select id="timerMode">
+          <option value="match">5 minutos para a partida inteira</option>
+          <option value="turn">5 minutos para cada jogada</option>
+        </select>
+      </label>
+      <label class="f" for="rounds">Rodadas por equipe
+        <select id="rounds">
+          <option value="2">2 rodadas</option>
+          <option value="3" selected>3 rodadas</option>
+          <option value="4">4 rodadas</option>
+          <option value="5">5 rodadas</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Passo 2</div>
+    <h2>Monte as equipes e escolha os personagens</h2>
+    <p class="muted" style="margin:6px 0 0">Ative de 1 a 4 equipes. Cada equipe tem nome, integrantes, foto e um dos 4 personagens. Um personagem só pode ser usado por uma equipe. Todos jogam no mesmo aparelho, um de cada vez.</p>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="eyebrow">Passo 3</div><h2>Tudo pronto?</h2></div>
+      <button class="btn big" id="startBtn">Começar partida</button>
+    </div>
+    <div class="err" id="setupErr" role="alert"></div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="eyebrow">Ranking geral</div><h2>Melhores equipes neste aparelho</h2></div>
+      <button class="btn ghost" id="clearHist1">Apagar ranking</button>
+    </div>
+    <div id="hist1" style="margin-top:12px"></div>
+  </section>
+</main>
+
+<!-- ======================= PARTIDA ======================= -->
+<main class="wrap" id="gameScreen" hidden>
+  <div class="hud">
+    <div class="chips" id="hudchips"></div>
+    <div class="row">
+      <div class="timer" id="timer">5:00<small>Partida</small></div>
+      <button class="btn ghost" id="pauseBtn">Pausar</button>
+      <button class="btn ghost" id="endBtn">Encerrar partida</button>
+    </div>
+  </div>
+  <div class="game">
+    <div class="leftcol">
+      <div class="board" id="board" aria-label="Tabuleiro"></div>
+      <div class="legend">
+        <span><i style="background:var(--t0);border-color:var(--t0);color:#fff">★</i>Saída da equipe</span>
+        <span><i>★</i>Casa segura (sem captura)</span>
+        <span><i style="background:var(--warnbg);color:var(--warn)">?</i>Imprevisto</span>
+        <span><i style="background:conic-gradient(var(--t1) 0 25%,var(--t2) 0 50%,var(--t3) 0 75%,var(--t0) 0)"></i>Centro: +15 pontos e Desafio da Sprint</span>
+      </div>
+    </div>
+    <div style="display:grid;gap:18px;min-width:0">
+      <section class="panel play" id="play"></section>
+      <section class="panel">
+        <div class="eyebrow">Ranking ao vivo</div>
+        <div class="ranking" id="liveRank" style="margin-top:10px"></div>
+      </section>
+      <section class="panel">
+        <details>
+          <summary>Escala de Story Points e regras de pontuação</summary>
+          <table class="scale" style="margin-top:8px"><thead><tr><th>SP</th><th>Classificação</th><th>Referência</th></tr></thead><tbody>
+            <tr><td><b>1</b></td><td>Muito pequeno</td><td>Alteração mínima, conhecida e previsível.</td></tr>
+            <tr><td><b>2</b></td><td>Pequeno</td><td>Poucas etapas, baixa complexidade.</td></tr>
+            <tr><td><b>3</b></td><td>Simples</td><td>Algumas etapas, solução conhecida.</td></tr>
+            <tr><td><b>5</b></td><td>Moderado</td><td>Vários componentes ou regras específicas.</td></tr>
+            <tr><td><b>8</b></td><td>Complexo</td><td>Integrações, validações ou incertezas relevantes.</td></tr>
+            <tr><td><b>13</b></td><td>Muito complexo</td><td>Múltiplas dependências e riscos importantes.</td></tr>
+            <tr><td><b>21</b></td><td>Extremamente complexo</td><td>Escopo amplo; considere dividir a história.</td></tr>
+          </tbody></table>
+          <ul style="font-size:14px">
+            <li><b>Precisão:</b> conta a distância em posições da escala entre a estimativa revisada e a referência (de 8 para 13 é 1 posição).</li>
+            <li><b>Leitura inicial:</b> bônus se a estimativa inicial bater com a referência antes do imprevisto.</li>
+            <li><b>Revisão:</b> +3 se você mudou na direção certa ou manteve uma estimativa que já estava certa.</li>
+            <li><b>Movimento extra:</b> acerto exato dá +3 casas; uma posição de distância dá +1 casa.</li>
+            <li><b>Captura:</b> cair na casa de outra equipe (fora das casas seguras) faz ela voltar e dá +2 pontos.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- ======================= FIM ======================= -->
+<main class="wrap" id="endScreen" hidden>
+  <section class="panel" style="margin-bottom:18px">
+    <div class="eyebrow" id="endReason">Fim da partida</div>
+    <h2 style="font-size:30px">Ranking da partida</h2>
+    <div class="podium" id="podium"></div>
+    <div class="tablewrap"><table class="tbl" id="endTable"></table></div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" id="againBtn">Jogar de novo com as mesmas equipes</button>
+      <button class="btn ghost" id="setupBtn">Alterar equipes e dificuldade</button>
+    </div>
+  </section>
+  <section class="panel" style="margin-bottom:30px">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="eyebrow">Ranking geral</div><h2>Melhores equipes neste aparelho</h2></div>
+      <button class="btn ghost" id="clearHist2">Apagar ranking</button>
+    </div>
+    <div id="hist2" style="margin-top:12px"></div>
+  </section>
+</main>
+
+<div class="modal" id="sprintModal" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sprintTitle">
+    <div class="eyebrow">Desafio da Sprint</div>
+    <h2 id="sprintTitle">Monte uma Sprint de até 30 SP</h2>
+    <p class="muted" style="margin:6px 0 10px" id="sprintIntro"></p>
+    <div id="sprintList"></div>
+    <div class="row" style="justify-content:space-between;margin-top:12px">
+      <b>Selecionado: <span id="sprintTotal">0</span> / 30 SP</b>
+      <div class="row"><button class="btn" id="sprintCheck">Avaliar planejamento</button><button class="btn ghost" id="sprintClose" hidden>Concluir e passar a vez</button></div>
+    </div>
+    <div id="sprintFeedback" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<footer class="wrap">Estimation Arena • Material didático para aprendizagem de estimativas ágeis</footer>
+
+<script>
+const stories=[
+{title:"Login de usuário",level:"Baixa",initial:3,final:5,desc:"Como usuário cadastrado, quero acessar a plataforma utilizando meu e-mail e senha, para visualizar minhas informações e utilizar as funcionalidades disponíveis de acordo com minhas permissões.",context:"Uma empresa está desenvolvendo uma plataforma de gerenciamento de projetos e precisa disponibilizar um mecanismo de autenticação para seus usuários.",req:["Criar uma tela de login.","Disponibilizar campos para e-mail e senha.","Validar as credenciais informadas.","Permitir visualizar ou ocultar a senha.","Exibir mensagens de erro para credenciais inválidas.","Redirecionar o usuário ao painel após a autenticação.","Encerrar a sessão quando o usuário sair."],acc:["Aceitar somente usuários previamente cadastrados.","Impedir o acesso quando as credenciais estiverem incorretas.","Exibir mensagem clara em caso de falha.","Encerrar a sessão após o logout.","Respeitar as regras de autenticação."],event:"A empresa decidiu utilizar um serviço externo de autenticação. A equipe ainda não possui experiência com a integração e precisa adaptar o sistema para utilizar esse serviço.",challenge:"Considere o esforço de integração e os possíveis problemas de comunicação com o serviço externo."},
+{title:"Recuperação de senha",level:"Baixa",initial:2,final:3,desc:"Como usuário cadastrado, quero recuperar minha senha por meio do meu e-mail, para restabelecer o acesso à minha conta sem precisar entrar em contato com o suporte técnico.",context:"Após o lançamento da plataforma, diversos usuários relataram dificuldades para acessar suas contas porque esqueceram suas senhas.",req:["Disponibilizar a opção de recuperação na tela de login.","Solicitar o e-mail associado à conta.","Verificar o endereço informado.","Enviar um link de recuperação.","Permitir cadastrar uma nova senha.","Invalidar o link após utilização ou expiração."],acc:["Permitir solicitar recuperação informando o e-mail.","O link deve possuir prazo de validade.","Impedir reutilização de links utilizados.","Validar os requisitos mínimos da nova senha.","Confirmar a alteração ao usuário."],event:"O serviço de envio de e-mails já está implementado. Entretanto, não existe mecanismo para controlar a expiração dos links e evitar solicitações excessivas de recuperação.",challenge:"Avalie a implementação das regras de segurança e do controle de solicitações."},
+{title:"Cadastro de novos usuários",level:"Média",initial:5,final:8,desc:"Como visitante, quero criar uma conta informando meus dados pessoais, para utilizar os serviços da plataforma e acompanhar minhas atividades.",context:"A plataforma está em expansão e precisa permitir que novos usuários realizem o próprio cadastro, sem depender de um administrador.",req:["Criar formulário de cadastro.","Solicitar nome completo, e-mail, telefone e senha.","Validar campos obrigatórios.","Verificar se o e-mail já está cadastrado.","Implementar validação de senha.","Armazenar dados no banco.","Enviar confirmação por e-mail e ativar a conta por link."],acc:["Não concluir cadastro com campos obrigatórios vazios.","Identificar e-mails duplicados.","Exigir senha conforme requisitos de segurança.","Enviar e-mail de confirmação.","Ativar conta somente após confirmação.","Armazenar dados corretamente."],event:"O cliente solicita que o cadastro também permita a inclusão de documentos pessoais para validação da identidade. Essa exigência não estava prevista no planejamento inicial.",challenge:"Identifique o impacto da ampliação do escopo, considerando armazenamento, validação e segurança dos documentos."},
+{title:"Edição de perfil",level:"Baixa",initial:3,final:5,desc:"Como usuário cadastrado, quero editar minhas informações pessoais, para manter meu perfil atualizado e corrigir dados incorretos.",context:"Os usuários precisam atualizar suas informações pessoais sem depender de solicitações à equipe administrativa.",req:["Disponibilizar página de edição de perfil.","Permitir alterar nome e telefone.","Permitir atualizar foto de perfil.","Exibir informações cadastradas.","Validar dados antes de salvar.","Exibir confirmação após atualização."],acc:["Exibir os dados atuais.","Salvar alterações corretamente.","Impedir informações em formatos inválidos.","Respeitar formatos e limites de tamanho das imagens.","Atualizar as informações no perfil."],event:"A plataforma não possui serviço de armazenamento de imagens. A equipe precisará integrar uma ferramenta externa e garantir que as imagens sejam exibidas corretamente em diferentes dispositivos.",challenge:"Considere integração, tratamento dos arquivos e compatibilidade da interface."},
+{title:"Painel de relatórios gerenciais",level:"Alta",initial:8,final:13,desc:"Como administrador, quero visualizar relatórios gerenciais com indicadores e gráficos, para acompanhar o desempenho da plataforma e identificar tendências de utilização.",context:"Os administradores precisam acompanhar o desempenho da plataforma e tomar decisões com base nas informações geradas pelos usuários.",req:["Criar painel de indicadores.","Apresentar total de usuários cadastrados.","Exibir acessos por período.","Disponibilizar filtros por data.","Apresentar gráficos de evolução.","Permitir comparar períodos.","Atualizar indicadores com base nos dados registrados."],acc:["Apresentar informações atualizadas.","Aplicar corretamente os filtros.","Representar os dados corretamente nos gráficos.","Permitir selecionar diferentes períodos.","Restringir acesso a administradores autorizados.","Não comprometer significativamente o desempenho."],event:"Os dados estão distribuídos em diversas tabelas, sem estrutura preparada para consultas complexas. O cliente também solicita relatórios comparativos entre meses e anos.",challenge:"Avalie o trabalho para organizar dados, desenvolver consultas, construir gráficos e garantir desempenho."},
+{title:"Exportação de relatórios",level:"Média",initial:5,final:8,desc:"Como administrador, quero exportar relatórios em PDF e Excel, para compartilhar resultados e realizar análises complementares.",context:"Os administradores precisam compartilhar os relatórios gerados pela plataforma em reuniões e apresentações externas.",req:["Disponibilizar botão de exportação.","Permitir escolher PDF ou Excel.","Exportar os dados apresentados na tela.","Respeitar filtros aplicados.","Organizar dados em tabelas.","Inserir título, data e identificação do relatório.","Permitir download."],acc:["Gerar arquivos nos dois formatos.","Manter os mesmos dados exibidos na plataforma.","Respeitar filtros aplicados.","Apresentar formatação adequada.","Disponibilizar download após geração."],event:"Alguns relatórios poderão conter mais de 100 mil registros. A geração não poderá bloquear a utilização da plataforma durante o processamento.",challenge:"Considere processamento em segundo plano, desempenho, memória e disponibilização dos arquivos."},
+{title:"Sistema de notificações",level:"Média",initial:3,final:5,desc:"Como usuário cadastrado, quero receber notificações sobre acontecimentos importantes da plataforma, para acompanhar atualizações e não perder informações relevantes.",context:"Os usuários precisam receber informações sobre atualizações, atividades e alterações importantes relacionadas às suas contas.",req:["Criar central de notificações.","Exibir notificações recentes.","Identificar notificações lidas e não lidas.","Registrar data e horário.","Permitir marcar como lidas.","Enviar notificações por e-mail."],acc:["Permitir visualizar notificações.","Identificar notificações não lidas.","Permitir marcá-las como lidas.","Associar notificações ao usuário correto.","Enviar e-mails quando necessário.","Evitar notificações duplicadas."],event:"A empresa decide que as notificações também devem ser enviadas em tempo real, sem que o usuário precise atualizar a página. A equipe ainda não possui essa infraestrutura.",challenge:"Avalie a necessidade de implementar comunicação em tempo real e integrar o envio de e-mails."},
+{title:"Pesquisa e filtros",level:"Média",initial:5,final:8,desc:"Como usuário, quero pesquisar e filtrar informações disponíveis na plataforma, para encontrar rapidamente os registros que correspondem às minhas necessidades.",context:"Com o crescimento da plataforma, os usuários passaram a encontrar dificuldades para localizar informações específicas.",req:["Criar campo de pesquisa.","Permitir pesquisas por palavras-chave.","Disponibilizar filtros por categoria.","Permitir combinar filtros.","Organizar resultados por relevância ou data.","Disponibilizar paginação.","Exibir mensagem quando não houver resultados."],acc:["Apresentar resultados relacionados ao termo pesquisado.","Permitir filtros individuais e combinados.","Respeitar permissões de acesso.","Organizar resultados.","Informar quando não houver correspondências.","Apresentar desempenho adequado."],event:"A plataforma possui mais de um milhão de registros e as pesquisas atuais apresentam lentidão. O cliente solicita resultados em poucos segundos, mesmo com vários filtros simultâneos.",challenge:"Considere otimização das consultas, indexação e tratamento de grandes volumes de informações."},
+{title:"Controle de permissões",level:"Alta",initial:8,final:13,desc:"Como administrador, quero definir diferentes níveis de acesso para os usuários, para controlar quais funcionalidades e informações cada perfil poderá visualizar ou modificar.",context:"A empresa percebeu que todos os usuários possuem praticamente o mesmo nível de acesso, o que representa um risco para a segurança das informações.",req:["Criar perfis de acesso.","Disponibilizar perfis de administrador, gerente e usuário comum.","Definir permissões específicas.","Permitir cadastrar perfis.","Permitir alterar permissões.","Restringir funcionalidades conforme o perfil.","Registrar alterações nas permissões."],acc:["Cada perfil deve possuir permissões específicas.","Impedir acesso sem autorização.","Permitir ao administrador modificar permissões.","Aplicar alterações corretamente.","Manter a segurança dos dados.","Validar permissões na interface e no servidor."],event:"A plataforma já possui centenas de usuários ativos e não apresenta estrutura de permissões. A implementação deverá preservar os acessos existentes, migrar os usuários e evitar exposição de informações durante a transição.",challenge:"Considere migração de dados, arquitetura de autorização, testes de segurança e compatibilidade."},
+{title:"Histórico e auditoria",level:"Alta",initial:8,final:13,desc:"Como administrador, quero consultar um histórico detalhado das atividades realizadas pelos usuários, para identificar alterações, investigar problemas e acompanhar ações importantes.",context:"A empresa precisa aumentar a segurança e a rastreabilidade das operações realizadas na plataforma, principalmente em ações administrativas.",req:["Registrar operações importantes.","Identificar o usuário responsável.","Registrar data e horário.","Identificar tipo de operação.","Registrar alterações relevantes.","Permitir pesquisa por usuário.","Filtrar por período e tipo.","Restringir acesso e proteger registros."],acc:["Registrar operações definidas como relevantes.","Identificar o responsável pela ação.","Apresentar data, horário e descrição.","Permitir pesquisa pelo administrador.","Restringir acesso a usuários não autorizados.","Proteger registros contra alterações indevidas.","Suportar crescimento do volume de informações."],event:"O cliente exige que os registros sejam armazenados em ambiente separado do banco principal, com mecanismos de proteção contra alterações e capacidade para atender requisitos de auditoria.",challenge:"Avalie arquitetura de armazenamento, segurança, rastreabilidade e integração com diferentes módulos."}
+];
+
+const SCALE=[1,2,3,5,8,13,21];
+const CHARS=[
+  {id:"coruja",emoji:"🦉",name:"Coruja",role:"Scrum Master",perk:"+1 ponto sempre que ganhar o bônus de revisão."},
+  {id:"raposa",emoji:"🦊",name:"Raposa",role:"Desenvolvedora",perk:"+1 casa em todo lançamento de dado."},
+  {id:"tartaruga",emoji:"🐢",name:"Tartaruga",role:"Testadora",perk:"Não pode ser capturada por outras equipes."},
+  {id:"abelha",emoji:"🐝",name:"Abelha",role:"Product Owner",perk:"+3 pontos no Desafio da Sprint."}
+];
+const DIFF={
+  facil:{label:"Fácil",table:[10,7,4,1],initBonus:2,capture:3,pool:s=>s.level!=="Alta"},
+  medio:{label:"Médio",table:[10,6,2,0],initBonus:2,capture:4,pool:()=>true},
+  dificil:{label:"Difícil",table:[12,5,0,0],initBonus:3,capture:6,pool:()=>true}
+};
+const RANGE={Baixa:"2 a 5 SP",Média:"3 a 8 SP",Alta:"8 a 13 SP"};
+const IMPREVISTOS=[
+  {t:"Dívida técnica acumulada",d:"Volte 3 casas.",fx:t=>{t.pos=Math.max(0,t.pos-3)}},
+  {t:"Pair programming",d:"Avance 2 casas.",fx:t=>{t.pos=Math.min(56,t.pos+2)}},
+  {t:"Retrospectiva produtiva",d:"Ganhe 3 pontos.",fx:t=>{t.points+=3}},
+  {t:"Bug em produção",d:"Perca 2 pontos.",fx:t=>{t.points=Math.max(0,t.points-2)}},
+  {t:"Daily bem conduzida",d:"Ganhe 1 ponto e avance 1 casa.",fx:t=>{t.points+=1;t.pos=Math.min(56,t.pos+1)}},
+  {t:"Reunião que podia ser um e-mail",d:"Volte 1 casa.",fx:t=>{t.pos=Math.max(0,t.pos-1)}}
+];
+const TIME=300;
+
+/* ---------- Geometria do tabuleiro ---------- */
+const TRACK=[];{const p=(r,c)=>TRACK.push([r,c]);
+for(let c=1;c<=5;c++)p(6,c);for(let r=5;r>=0;r--)p(r,6);p(0,7);p(0,8);
+for(let r=1;r<=5;r++)p(r,8);for(let c=9;c<=14;c++)p(6,c);p(7,14);p(8,14);
+for(let c=13;c>=9;c--)p(8,c);for(let r=9;r<=14;r++)p(r,8);p(14,7);p(14,6);
+for(let r=13;r>=9;r--)p(r,6);for(let c=5;c>=0;c--)p(8,c);p(7,0);p(6,0);}
+const START=[0,13,26,39];
+const HOME=[[1,2,3,4,5].map(c=>[7,c]),[1,2,3,4,5].map(r=>[r,7]),[13,12,11,10,9].map(c=>[7,c]),[13,12,11,10,9].map(r=>[r,7])];
+const SAFE=new Set([0,8,13,21,26,34,39,47]);
+const EVENT_CELLS=new Set([4,17,30,43]);
+const LAST=56; // 0..50 trilha, 51..55 corredor, 56 centro
+
+/* ---------- Utilidades ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+function avatar(t,size){const pic=!!t.photo;return `<span class="av ${pic?"pic":""}" style="--tc:var(--t${t.slot});--s:${size}px">${pic?`<img src="${t.photo}" alt="">`:""}<span class="em">${CHARS[t.char].emoji}</span></span>`}
+
+/* ---------- Configuração ---------- */
+const defaults=[
+  {active:true,name:"Equipe Sprint",members:"Ana, Bruno",photo:"",char:0},
+  {active:true,name:"Equipe Backlog",members:"Carla, Diego",photo:"",char:1},
+  {active:false,name:"Equipe Kanban",members:"",photo:"",char:2},
+  {active:false,name:"Equipe Daily",members:"",photo:"",char:3}
+];
+let cfg=store.get("ea-setup",null);
+if(!cfg||!Array.isArray(cfg.slots)||cfg.slots.length!==4)cfg={diff:"medio",timerMode:"match",rounds:3,slots:defaults};
+
+function renderSetup(){
+  document.querySelectorAll(".diff").forEach(b=>b.setAttribute("aria-pressed",b.dataset.diff===cfg.diff));
+  $("timerMode").value=cfg.timerMode;$("rounds").value=String(cfg.rounds);
+  $("slots").innerHTML=cfg.slots.map((s,i)=>`
+  <div class="slot ${s.active?"on":"off"}" id="slot${i}" style="--tc:var(--t${i})">
+    <div class="slothead">
+      <label class="sw" for="act${i}"><span class="dot"></span>Equipe ${i+1}</label>
+      <input type="checkbox" class="toggle" id="act${i}" ${s.active?"checked":""} aria-label="Participar com a equipe ${i+1}">
+    </div>
+    <div class="slotbody">
+      <div class="photoRow">
+        <span id="prev${i}"></span>
+        <div style="display:grid;gap:6px;flex:1;min-width:0">
+          <input id="name${i}" maxlength="24" placeholder="Nome da equipe" value="${esc(s.name)}" aria-label="Nome da equipe ${i+1}">
+          <div class="row">
+            <span class="btn ghost filebtn">Enviar foto<input type="file" accept="image/*" id="photo${i}" aria-label="Foto da equipe ${i+1}"></span>
+            <button class="btn ghost" id="rmphoto${i}" ${s.photo?"":"hidden"}>Remover foto</button>
+          </div>
+        </div>
+      </div>
+      <input id="mem${i}" maxlength="80" placeholder="Integrantes (separados por vírgula)" value="${esc(s.members)}" aria-label="Integrantes da equipe ${i+1}">
+      <div class="chars" id="chars${i}"></div>
+      <div class="perk" id="perk${i}"></div>
+    </div>
+  </div>`).join("");
+  cfg.slots.forEach((s,i)=>{
+    $("act"+i).onchange=e=>{s.active=e.target.checked;$("slot"+i).className="slot "+(s.active?"on":"off");updateChars()};
+    $("name"+i).oninput=e=>{s.name=e.target.value;updatePreview(i)};
+    $("mem"+i).oninput=e=>{s.members=e.target.value};
+    $("photo"+i).onchange=e=>{const f=e.target.files[0];if(!f)return;readPhoto(f,url=>{s.photo=url;$("rmphoto"+i).hidden=false;updatePreview(i)})};
+    $("rmphoto"+i).onclick=()=>{s.photo="";$("photo"+i).value="";$("rmphoto"+i).hidden=true;updatePreview(i)};
+  });
+  updateChars();renderHistory();
+}
+function updatePreview(i){const s=cfg.slots[i];$("prev"+i).innerHTML=avatar({slot:i,photo:s.photo,char:s.char},64)}
+function updateChars(){
+  cfg.slots.forEach((s,i)=>{
+    const taken=new Set(cfg.slots.filter((o,j)=>j!==i&&o.active).map(o=>o.char));
+    $("chars"+i).innerHTML=CHARS.map((c,k)=>`<button class="char" data-slot="${i}" data-char="${k}" aria-pressed="${s.char===k}" ${taken.has(k)&&s.char!==k?"disabled":""}><span class="em">${c.emoji}</span><b>${c.name}</b><span class="muted">${c.role}</span></button>`).join("");
+    const c=CHARS[s.char];
+    $("perk"+i).innerHTML=`<b>${c.emoji} ${c.name} · ${c.role}:</b> ${c.perk}`+(s.active&&taken.has(s.char)?` <span style="color:var(--bad);font-weight:800">Já está com outra equipe.</span>`:"");
+    updatePreview(i);
+  });
+}
+$("slots").addEventListener("click",e=>{const b=e.target.closest(".char");if(!b||b.disabled)return;cfg.slots[+b.dataset.slot].char=+b.dataset.char;updateChars()});
+$("diffs").addEventListener("click",e=>{const b=e.target.closest(".diff");if(!b)return;cfg.diff=b.dataset.diff;renderSetup()});
+$("timerMode").onchange=e=>cfg.timerMode=e.target.value;
+$("rounds").onchange=e=>cfg.rounds=+e.target.value;
+function readPhoto(file,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const S=128,c=document.createElement("canvas");c.width=c.height=S;const m=Math.min(img.width,img.height);c.getContext("2d").drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,S,S);cb(c.toDataURL("image/jpeg",.82))};img.src=r.result};r.readAsDataURL(file)}
+
+$("startBtn").onclick=()=>{
+  const act=cfg.slots.filter(s=>s.active);
+  if(!act.length){$("setupErr").textContent="Ative pelo menos uma equipe para começar.";return}
+  if(act.some(s=>!s.name.trim())){$("setupErr").textContent="Dê um nome para cada equipe ativa.";return}
+  const ch=act.map(s=>s.char);if(new Set(ch).size!==ch.length){$("setupErr").textContent="Cada equipe precisa de um personagem diferente.";return}
+  $("setupErr").textContent="";store.set("ea-setup",cfg);startGame();
+};
+
+/* ---------- Ranking geral ---------- */
+function renderHistory(){
+  const h=store.get("ea-history",[]).sort((a,b)=>b.points-a.points).slice(0,10);
+  const html=h.length?`<div class="tablewrap"><table class="tbl"><thead><tr><th>#</th><th>Equipe</th><th>Personagem</th><th>Dificuldade</th><th>Acertos</th><th>Pontos</th><th>Data</th></tr></thead><tbody>${h.map((r,i)=>`<tr><td class="n">${i+1}</td><td><div class="who">${avatar({slot:r.slot,photo:r.photo,char:r.char},34)}<div><b>${esc(r.name)}</b>${r.members?`<br><small class="muted">${esc(r.members)}</small>`:""}</div></div></td><td>${CHARS[r.char].emoji} ${CHARS[r.char].name}</td><td>${DIFF[r.diff].label}</td><td class="n">${r.exact}/${r.rounds}</td><td class="n">${r.points}</td><td><small>${esc(r.date)}</small></td></tr>`).join("")}</tbody></table></div>`:`<p class="muted" style="margin:0">Nenhuma partida registrada ainda. Ao fim de cada partida, as equipes entram aqui, e dá para comparar turmas e grupos jogando no mesmo aparelho.</p>`;
+  $("hist1").innerHTML=html;$("hist2").innerHTML=html;
+}
+const clearHist=b=>{if(b.dataset.confirm){store.set("ea-history",[]);renderHistory();b.textContent="Apagar ranking";delete b.dataset.confirm}else{b.dataset.confirm="1";b.textContent="Confirmar: apagar tudo"}};
+$("clearHist1").onclick=e=>clearHist(e.target);$("clearHist2").onclick=e=>clearHist(e.target);
+
+/* ---------- Partida ---------- */
+let G=null,tick=null;
+function show(id){["setup","gameScreen","endScreen"].forEach(x=>$(x).hidden=x!==id);window.scrollTo({top:0})}
+function cur(){return G.teams[G.turn]}
+
+function startGame(){
+  const d=DIFF[cfg.diff];
+  G={diff:cfg.diff,timerMode:cfg.timerMode,rounds:cfg.rounds,
+    teams:cfg.slots.map((s,i)=>({...s,slot:i})).filter(s=>s.active).map(s=>({slot:s.slot,name:s.name.trim(),members:s.members.trim(),photo:s.photo,char:s.char,pos:0,points:0,roundsPlayed:0,exact:0,dists:[],finished:false,sprintDone:false})),
+    pool:stories.map((s,i)=>i).filter(i=>d.pool(stories[i])),deck:[],turn:-1,phase:"roll",card:null,initial:null,revision:null,
+    timeLeft:TIME,turnLeft:TIME,paused:false,over:false,busy:false,msgs:[],die:null,result:null,lastCard:null};
+  buildBoard();show("gameScreen");$("pauseBtn").textContent="Pausar";resetEndBtn();
+  clearInterval(tick);tick=setInterval(onTick,1000);
+  nextTurn();
+}
+
+function onTick(){
+  if(!G||G.over||G.paused||G.busy||!$("sprintModal").hidden)return;
+  if(G.timerMode==="match"){G.timeLeft--;if(G.timeLeft<=0){G.timeLeft=0;renderTimer();endGame("O tempo de 5 minutos acabou");return}}
+  else if(["roll","landed","estimate","revise"].includes(G.phase)){
+    G.turnLeft--;if(G.turnLeft<=0){G.turnLeft=0;G.phase="timeout";renderPlay()}
+  }
+  renderTimer();
+}
+function renderTimer(){
+  const v=G.timerMode==="match"?G.timeLeft:G.turnLeft;
+  $("timer").innerHTML=`${fmt(v)}<small>${G.timerMode==="match"?"Partida":"Jogada"}</small>`;
+  $("timer").classList.toggle("low",v<=60);
+}
+
+function nextTurn(){
+  const n=G.teams.length;
+  for(let k=1;k<=n;k++){const i=(G.turn+k)%n,t=G.teams[i];
+    if(!t.finished&&t.roundsPlayed<G.rounds){G.turn=i;G.phase="roll";G.turnLeft=TIME;G.msgs=[];G.die=null;G.card=null;G.initial=null;G.revision=null;G.result=null;renderAll();return}}
+  endGame("Todas as rodadas foram jogadas");
+}
+function endTurn(){cur().roundsPlayed++;nextTurn()}
+
+function drawCard(){
+  if(!G.deck.length){G.deck=shuffle(G.pool);if(G.deck.length>1&&G.deck[0]===G.lastCard)G.deck.push(G.deck.shift())}
+  G.card=G.deck.shift();G.lastCard=G.card;
+}
+
+/* ---------- Tabuleiro ---------- */
+function buildBoard(){
+  const b=$("board");let h="";
+  [[1,1],[1,10],[10,10],[10,1]].forEach(([r,c],s)=>{h+=`<div class="base" id="base${s}" style="grid-area:${r} / ${c} / span 6 / span 6;--tc:var(--t${s})"><div class="in"></div></div>`});
+  TRACK.forEach(([r,c],i)=>{
+    const st=START.indexOf(i);
+    const cls=["cell"];if(st>=0)cls.push("start");if(EVENT_CELLS.has(i))cls.push("event");
+    const mk=SAFE.has(i)?"★":EVENT_CELLS.has(i)?"?":"";
+    h+=`<div class="${cls.join(" ")}" id="c${r}_${c}" style="grid-area:${r+1} / ${c+1};${st>=0?`--tc:var(--t${st})`:""}">${mk?`<span class="mk">${mk}</span>`:""}<div class="tk"></div></div>`;
+  });
+  HOME.forEach((arr,s)=>arr.forEach(([r,c])=>{h+=`<div class="cell home" id="c${r}_${c}" style="grid-area:${r+1} / ${c+1};--tc:var(--t${s});--tcs:var(--t${s}s)"><div class="tk"></div></div>`}));
+  h+=`<div class="center" id="center" style="grid-area:7 / 7 / span 3 / span 3"><div class="tk"></div></div>`;
+  b.innerHTML=h;
+}
+function cellEl(t){
+  if(t.pos>=LAST)return $("center");
+  const [r,c]=t.pos<=50?TRACK[(START[t.slot]+t.pos)%52]:HOME[t.slot][t.pos-51];
+  return $(`c${r}_${c}`);
+}
+function renderBoard(){
+  [0,1,2,3].forEach(s=>{
+    const t=G.teams.find(x=>x.slot===s),el=$("base"+s);
+    el.classList.toggle("empty",!t);el.classList.toggle("turn",!!t&&cur()===t&&!G.over);
+    el.querySelector(".in").innerHTML=t?`${avatar(t,46)}<b>${esc(t.name)}</b><small>${t.points} pts · ${CHARS[t.char].name}</small>`:`<small>Sem equipe</small>`;
+  });
+  document.querySelectorAll("#board .tk").forEach(x=>x.innerHTML="");
+  G.teams.forEach(t=>{
+    const tk=cellEl(t).querySelector(".tk");
+    tk.insertAdjacentHTML("beforeend",`<span class="token ${cur()===t&&!G.over?"active":""}" style="--tc:var(--t${t.slot})" title="${esc(t.name)}">${t.photo?`<img src="${t.photo}" alt="">`:CHARS[t.char].emoji}</span>`);
+  });
+}
+async function moveSteps(t,n){
+  for(let i=0;i<n&&t.pos<LAST;i++){t.pos++;renderBoard();await sleep(reduced?40:170)}
+}
+
+/* ---------- Painel ---------- */
+function renderAll(){renderBoard();renderPlay();renderRank();renderHud();renderTimer()}
+function renderHud(){
+  const d=DIFF[G.diff];
+  $("hudchips").innerHTML=`<span class="chip">Dificuldade: ${d.label}</span><span class="chip">${G.teams.length} ${G.teams.length>1?"equipes":"equipe"}</span><span class="chip">${G.rounds} rodadas por equipe</span>`;
+}
+function sorted(){return [...G.teams].sort((a,b)=>b.points-a.points||b.pos-a.pos||b.exact-a.exact)}
+function renderRank(){
+  $("liveRank").innerHTML=sorted().map((t,i)=>`<div class="rk ${cur()===t&&!G.over?"now":""}" style="--tc:var(--t${t.slot})"><span class="pos">${i+1}º</span>${avatar(t,36)}<div class="nm"><b>${esc(t.name)}</b><small>${t.finished?"Chegou ao centro":`Casa ${t.pos}/${LAST}`} · rodada ${Math.min(t.roundsPlayed+(cur()===t&&!t.finished?1:0),G.rounds)}/${G.rounds}</small></div><span class="pts">${t.points}</span></div>`).join("");
+}
+function dieHTML(v,rolling){const P={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[v]||[];return `<div class="die ${rolling?"rolling":""}" aria-label="Dado: ${v}">${Array.from({length:9},(_,i)=>`<i class="${P.includes(i)?"p":""}"></i>`).join("")}</div>`}
+function pointsHTML(kind,sel,enabled){return `<div class="points">${SCALE.map(p=>`<button class="pt ${sel===p?"sel":""}" data-act="${kind}" data-v="${p}" ${enabled?"":"disabled"}>${p}</button>`).join("")}</div>`}
+
+function renderPlay(){
+  const t=cur(),c=CHARS[t.char],box=$("play");
+  box.style.setProperty("--tc",`var(--t${t.slot})`);box.style.setProperty("--tcs",`var(--t${t.slot}s)`);
+  let h=`<div class="turnhead">${avatar(t,58)}<div style="min-width:0"><div class="eyebrow">Vez de · rodada ${t.roundsPlayed+1}/${G.rounds}</div><h2>${esc(t.name)}</h2><small class="muted">${c.emoji} ${c.name} (${c.role})${t.members?" · "+esc(t.members):""}</small></div></div>`;
+  const msgs=G.msgs.length?`<ul class="msgs">${G.msgs.map(m=>`<li class="${m.k||""}">${m.h}</li>`).join("")}</ul>`:"";
+  if(G.phase==="roll"){
+    h+=`<p style="margin:0">Lance o dado para mover o peão. Depois, a equipe recebe uma carta de história de usuário para estimar.</p>
+    <div class="row">${dieHTML(G.die||6,false)}<button class="btn big" data-act="roll">Lançar dado</button></div>`;
+  } else if(G.phase==="rolling"){
+    h+=`<div class="row">${dieHTML(G.die,true)}<b>Movendo o peão...</b></div>`;
+  } else if(G.phase==="landed"){
+    h+=`<div class="row">${dieHTML(G.die,false)}<div style="flex:1;min-width:200px">${msgs}</div></div><button class="btn big" data-act="draw">Puxar carta de história</button>`;
+  } else if(G.phase==="home"){
+    h+=msgs+(t.sprintDone?`<button class="btn big" data-act="pass">Passar a vez</button>`:`<button class="btn big" data-act="sprint">Fazer o Desafio da Sprint</button>`);
+  } else if(G.phase==="timeout"){
+    h+=`<div class="eventbox"><strong>Tempo esgotado!</strong><p style="margin:4px 0 0">Os 5 minutos da jogada acabaram. ${esc(t.name)} não pontua nesta rodada.</p></div><button class="btn big" data-act="pass">Passar a vez</button>`;
+  } else {
+    h+=cardHTML();
+  }
+  if(G.paused)h+=`<div class="pausecover"><h2>Jogo pausado</h2><p class="muted" style="margin:0">O timer está parado e a carta fica escondida.</p><button class="btn" data-act="resume">Continuar</button></div>`;
+  box.innerHTML=h;
+}
+
+function cardHTML(){
+  const s=stories[G.card],d=G.diff,ph=G.phase,open=d==="facil"?"open":"";
+  let h=`<article class="storycard"><div class="eyebrow">Carta de história de usuário</div><h2>${esc(s.title)}</h2>
+  <div>${d==="dificil"?`<span class="tag">Complexidade oculta</span>`:`<span class="tag">Complexidade ${s.level.toLowerCase()}</span>`}${ph==="result"?`<span class="tag">Referência após o evento: ${s.final} SP</span>`:""}</div>
+  <p class="desc">${esc(s.desc)}</p>
+  ${d==="facil"&&ph!=="result"?`<div class="hint"><b>Dica do modo fácil:</b> histórias de complexidade ${s.level.toLowerCase()} costumam ficar entre ${RANGE[s.level]}.</div>`:""}
+  <details ${open}><summary>Contexto</summary><p style="margin:6px 0 2px;font-size:14px">${esc(s.context)}</p></details>
+  <details ${open}><summary>Requisitos funcionais (${s.req.length})</summary><ul>${s.req.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>
+  <details ${open}><summary>Critérios de aceitação (${s.acc.length})</summary><ul>${s.acc.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>
+  </article>
+  <div style="display:grid;gap:8px"><div class="eyebrow">Fase 1 · Estimativa inicial</div>
+  <small class="muted">Pense em complexidade, volume, incerteza e riscos. Story Points são relativos, não horas.</small>
+  ${pointsHTML("init",G.initial,ph==="estimate")}
+  ${ph==="estimate"?`<div class="row"><button class="btn" data-act="lock" ${G.initial===null?"disabled":""}>Confirmar estimativa inicial</button></div>`:`<small><b>Estimativa inicial registrada: ${G.initial} SP.</b></small>`}</div>`;
+  if(ph!=="estimate"){
+    h+=`<div class="eventbox"><strong>Imprevisto revelado!</strong><p style="margin:4px 0">${esc(s.event)}</p><p style="margin:0"><b>Desafio de revisão:</b> ${esc(s.challenge)}</p></div>
+    <div style="display:grid;gap:8px"><div class="eyebrow">Fase 2 · Revisão da estimativa</div>
+    <small class="muted">Mantenha ou altere sua estimativa.</small>
+    ${pointsHTML("rev",G.revision,ph==="revise")}
+    ${ph==="revise"?`<div class="row"><button class="btn" data-act="finish" ${G.revision===null?"disabled":""}>Finalizar história</button></div>`:""}</div>`;
+  }
+  if(ph==="result"){
+    const r=G.result;
+    h+=`<div class="result"><b style="font-size:17px">+${r.total} pontos nesta rodada</b>
+    <table><tr><td>Precisão (${r.dRev===0?"acerto exato":r.dRev+" posição"+(r.dRev>1?"ões":"")+" da referência"})</td><td>${r.precision}</td></tr>
+    <tr><td>Leitura inicial (referência antes do evento: ${s.initial} SP)</td><td>${r.initBonus}</td></tr>
+    <tr><td>Revisão: ${r.revMsg}</td><td>${r.rev}</td></tr>
+    <tr><td>Movimento extra no tabuleiro</td><td>+${r.steps} ${r.steps===1?"casa":"casas"}</td></tr></table>
+    ${s.final>=13?`<p style="margin:8px 0 0;font-size:14px">Histórias de 13 SP ou mais costumam ser candidatas a divisão em histórias menores.</p>`:""}</div>
+    <button class="btn big" data-act="advance">${r.steps?`Avançar ${r.steps} ${r.steps===1?"casa":"casas"} e passar a vez`:"Passar a vez"}</button>`;
+  }
+  return h;
+}
+
+$("play").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]");if(!b||b.disabled||!G||G.over||G.busy)return;
+  const a=b.dataset.act,t=cur();
+  if(a==="resume"){togglePause();return}
+  if(G.paused)return;
+  if(a==="roll")return doRoll();
+  if(a==="draw"){drawCard();G.phase="estimate";renderPlay();return}
+  if(a==="init"&&G.phase==="estimate"){G.initial=+b.dataset.v;renderPlay();return}
+  if(a==="lock"&&G.phase==="estimate"&&G.initial!==null){G.phase="revise";renderPlay();return}
+  if(a==="rev"&&G.phase==="revise"){G.revision=+b.dataset.v;renderPlay();return}
+  if(a==="finish"&&G.phase==="revise"&&G.revision!==null){score();return}
+  if(a==="advance"&&G.phase==="result"){
+    G.busy=true;G.phase="moving";const steps=G.result.steps;G.msgs=[];
+    await moveSteps(t,steps);G.busy=false;
+    if(t.pos>=LAST&&!t.finished){arrive(t);G.phase="home";renderAll();return}
+    endTurn();return;
+  }
+  if(a==="sprint"&&G.phase==="home"){openSprint();return}
+  if(a==="pass"&&(G.phase==="home"||G.phase==="timeout")){endTurn();return}
+});
+
+async function doRoll(){
+  const t=cur();G.busy=true;G.phase="rolling";
+  for(let i=0;i<(reduced?1:6);i++){G.die=1+Math.floor(Math.random()*6);renderPlay();await sleep(85)}
+  const v=1+Math.floor(Math.random()*6);G.die=v;renderPlay();
+  const bonus=CHARS[t.char].id==="raposa"?1:0;
+  G.msgs=[{h:`Tirou <b>${v}</b>${bonus?" + 1 casa da Raposa":""}.`}];
+  await moveSteps(t,v+bonus);
+  if(t.pos<=50){
+    let abs=(START[t.slot]+t.pos)%52;
+    if(EVENT_CELLS.has(abs)){
+      const fx=IMPREVISTOS[Math.floor(Math.random()*IMPREVISTOS.length)];fx.fx(t);
+      G.msgs.push({k:"ev",h:`<b>Imprevisto: ${fx.t}.</b> ${fx.d}`});renderBoard();
+    }
+    if(t.pos<=50){
+      abs=(START[t.slot]+t.pos)%52;
+      if(!SAFE.has(abs)){
+        G.teams.forEach(o=>{
+          if(o===t||o.finished||o.pos>50||(START[o.slot]+o.pos)%52!==abs)return;
+          if(CHARS[o.char].id==="tartaruga"){G.msgs.push({h:`${esc(o.name)} estava aqui, mas a Tartaruga não pode ser capturada.`});return}
+          const back=DIFF[G.diff].capture;o.pos=Math.max(0,o.pos-back);t.points+=2;
+          G.msgs.push({k:"good",h:`<b>Captura!</b> ${esc(o.name)} volta ${back} casas e ${esc(t.name)} ganha 2 pontos.`});
+        });
+      } else if(G.teams.some(o=>o!==t&&!o.finished&&o.pos<=50&&(START[o.slot]+o.pos)%52===abs)){
+        G.msgs.push({h:"Casa segura: ninguém é capturado aqui."});
+      }
+    }
+  }
+  G.busy=false;
+  if(t.pos>=LAST){arrive(t);G.phase="home";renderAll();return}
+  G.phase="landed";renderAll();
+}
+function arrive(t){t.finished=true;t.pos=LAST;t.points+=15;G.msgs.push({k:"good",h:`<b>${esc(t.name)} chegou ao centro do tabuleiro!</b> +15 pontos.${t.sprintDone?"":" Agora, o Desafio da Sprint vale até 15 pontos extras."}`})}
+
+function score(){
+  const t=cur(),s=stories[G.card],D=DIFF[G.diff];
+  const fi=SCALE.indexOf(s.final),ii=SCALE.indexOf(G.initial),ri=SCALE.indexOf(G.revision);
+  const dRev=Math.abs(ri-fi),dInit=Math.abs(ii-fi),dInitRef=Math.abs(ii-SCALE.indexOf(s.initial));
+  const precision=D.table[Math.min(dRev,3)];
+  const initBonus=dInitRef===0?D.initBonus:0;
+  let rev=0,revMsg;
+  if(G.revision!==G.initial&&dRev<dInit){rev=3;revMsg="mudou na direção certa"}
+  else if(G.revision===G.initial&&dInit===0){rev=3;revMsg="manteve uma estimativa que já estava certa"}
+  else if(G.revision!==G.initial){revMsg="a mudança afastou da referência"}
+  else revMsg="o imprevisto pedia ajuste";
+  if(rev&&CHARS[t.char].id==="coruja"){rev+=1;revMsg+=" (+1 da Coruja)"}
+  const steps=dRev===0?3:dRev===1?1:0;
+  const total=precision+initBonus+rev;
+  t.points+=total;t.dists.push(dRev);if(dRev===0)t.exact++;
+  G.result={dRev,precision,initBonus,rev,revMsg,steps,total};G.phase="result";
+  renderAll();
+}
+
+/* ---------- Desafio da Sprint ---------- */
+function openSprint(){
+  const t=cur();
+  $("sprintIntro").textContent=`${t.name}: escolha as histórias que entrariam na próxima Sprint, usando os pontos de referência após os imprevistos. Quanto mais perto de 30 SP sem passar, mais pontos.${CHARS[t.char].id==="abelha"?" A Abelha (Product Owner) ganha +3 se ficar dentro da capacidade.":""}`;
+  $("sprintList").innerHTML=stories.map((s,i)=>`<label class="sp" for="sp${i}"><input type="checkbox" id="sp${i}" value="${i}"><span><b>${esc(s.title)}</b><br><small class="muted">Complexidade ${s.level.toLowerCase()}</small></span><b class="v">${s.final} SP</b></label>`).join("");
+  $("sprintTotal").textContent="0";$("sprintFeedback").innerHTML="";$("sprintCheck").hidden=false;$("sprintCheck").disabled=false;$("sprintClose").hidden=true;
+  $("sprintModal").hidden=false;$("sprint0")?.focus?.();
+}
+$("sprintList").addEventListener("change",()=>{$("sprintTotal").textContent=sprintTotal()});
+function sprintTotal(){return [...document.querySelectorAll("#sprintList input:checked")].reduce((a,x)=>a+stories[+x.value].final,0)}
+$("sprintCheck").onclick=()=>{
+  const t=cur(),total=sprintTotal(),f=$("sprintFeedback");
+  if(!total){f.innerHTML=`<div class="eventbox">Selecione ao menos uma história antes de avaliar.</div>`;return}
+  let pts=0,msg;
+  if(total<=30){pts=5+Math.floor(total/3);if(CHARS[t.char].id==="abelha")pts+=3;
+    msg=`<b>Planejamento dentro da capacidade: +${pts} pontos.</b><br>Você usou ${total} de 30 SP e deixou ${30-total} SP de margem. Reflita se a seleção considera prioridades e riscos, não apenas o limite numérico.`}
+  else msg=`<b>Capacidade excedida: 0 pontos.</b><br>Você selecionou ${total} SP para uma capacidade de 30 SP. Em uma Sprint real, seria preciso priorizar e cortar escopo.`;
+  t.points+=pts;t.sprintDone=true;
+  f.innerHTML=`<div class="${total<=30?"result":"eventbox"}">${msg}</div>`;
+  document.querySelectorAll("#sprintList input").forEach(x=>x.disabled=true);
+  $("sprintCheck").hidden=true;$("sprintClose").hidden=false;renderRank();renderBoard();
+};
+$("sprintClose").onclick=()=>{$("sprintModal").hidden=true;endTurn()};
+
+/* ---------- Pausa e encerramento ---------- */
+function togglePause(){if(!G||G.over)return;G.paused=!G.paused;$("pauseBtn").textContent=G.paused?"Continuar":"Pausar";renderPlay()}
+$("pauseBtn").onclick=togglePause;
+function resetEndBtn(){const b=$("endBtn");b.textContent="Encerrar partida";b.className="btn ghost";delete b.dataset.confirm}
+$("endBtn").onclick=e=>{const b=e.currentTarget;if(b.dataset.confirm){endGame("Partida encerrada pelos jogadores")}else{b.dataset.confirm="1";b.textContent="Confirmar encerramento";b.className="btn danger";setTimeout(()=>{if(G&&!G.over)resetEndBtn()},4000)}};
+
+function endGame(reason){
+  if(!G||G.over)return;G.over=true;clearInterval(tick);$("sprintModal").hidden=true;
+  const rk=sorted();
+  $("endReason").textContent=`${reason} · Dificuldade ${DIFF[G.diff].label}`;
+  const medal=["1º","2º","3º"];const order=rk.length>=3?[1,0,2]:rk.length===2?[1,0]:[0];
+  $("podium").style.gridTemplateColumns=`repeat(${order.length},minmax(0,1fr))`;
+  $("podium").innerHTML=order.map(i=>{const t=rk[i];return `<div class="pod ${i===0?"p1":""}" style="--tc:var(--t${t.slot});--tcs:var(--t${t.slot}s)"><span class="medal">${medal[i]}</span>${avatar(t,i===0?78:60)}<b>${esc(t.name)}</b><span class="big">${t.points}</span><small class="muted">pontos</small></div>`}).join("");
+  $("endTable").innerHTML=`<thead><tr><th>#</th><th>Equipe</th><th>Personagem</th><th>Rodadas</th><th>Acertos exatos</th><th>Distância média</th><th>Tabuleiro</th><th>Pontos</th></tr></thead><tbody>${rk.map((t,i)=>{
+    const avg=t.dists.length?(t.dists.reduce((a,b)=>a+b,0)/t.dists.length).toFixed(1).replace(".",","):"–";
+    return `<tr><td class="n">${i+1}º</td><td><div class="who">${avatar(t,36)}<div><b>${esc(t.name)}</b>${t.members?`<br><small class="muted">${esc(t.members)}</small>`:""}</div></div></td><td>${CHARS[t.char].emoji} ${CHARS[t.char].name}</td><td class="n">${t.dists.length}</td><td class="n">${t.exact}</td><td class="n">${avg}</td><td>${t.finished?"Centro":`Casa ${t.pos}/${LAST}`}</td><td class="n">${t.points}</td></tr>`}).join("")}</tbody>`;
+  const date=new Date().toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  const hist=store.get("ea-history",[]);
+  G.teams.forEach(t=>hist.push({name:t.name,members:t.members,photo:t.photo,char:t.char,slot:t.slot,points:t.points,exact:t.exact,rounds:t.dists.length,diff:G.diff,date}));
+  hist.sort((a,b)=>b.points-a.points);store.set("ea-history",hist.slice(0,30));
+  renderHistory();show("endScreen");
+}
+$("againBtn").onclick=startGame;
+$("setupBtn").onclick=()=>{renderSetup();show("setup")};
+
+renderSetup();
+</script>
