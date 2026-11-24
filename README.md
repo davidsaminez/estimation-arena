@@ -8,7 +8,7 @@ Jogo de tabuleiro em 2D, no estilo Ludo, para treinar estimativas ágeis com Sto
 
 ## Como jogar
 
-1. Abra o `index.html` no navegador (ou publique com GitHub Pages).
+1. Abra o `index.html` no navegador (ou publique com GitHub Pages). O jogo começa com uma introdução de 8 telas que explica as regras, a pontuação e as vantagens dos personagens. Ela pode ser pulada e reaberta a qualquer momento pelo botão **Como jogar**, que pausa a partida em andamento.
 2. Escolha a dificuldade, o modo do timer e o número de rodadas.
 3. Ative de 1 a 4 equipes. Cada uma tem nome, integrantes, foto e um personagem.
 4. Na sua vez, a equipe:

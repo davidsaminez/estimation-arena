@@ -14,7 +14,7 @@
   --board:#fbfcfe; --cell:#ffffff; --accent:#27348b; --accent-ink:#ffffff;
   --t0:#e0522b; --t1:#14967f; --t2:#e8a900; --t3:#3567a8;
   --t0s:#fbe3db; --t1s:#d5efe9; --t2s:#fbefc8; --t3s:#dbe5f3;
-  --good:#1f7a4f; --goodbg:#e3f4ea; --warn:#a85d00; --warnbg:#fff1dc; --bad:#b23a48;
+  --good:#1f7a4f; --goodbg:#e3f4ea; --warn:#a85d00; --warnbg:#fff1dc; --bad:#b23a48; --badbg:#f8e1e4;
   --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:14px; --shadow:0 10px 30px #1c233314;
@@ -24,14 +24,14 @@
   --board:#1f2738; --cell:#283247; --accent:#8f9cf5; --accent-ink:#10141c;
   --t0:#f0714c; --t1:#2fbfa4; --t2:#f2c12e; --t3:#6c9be0;
   --t0s:#4a2a22; --t1s:#1d4440; --t2s:#4a3e15; --t3s:#24344d;
-  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d;
+  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d; --badbg:#3d1d24;
   --shadow:0 10px 30px #00000055; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10141c; --surface:#1a2030; --surface2:#222a3c; --ink:#e7ebf3; --muted:#9ba5b8; --line:#2f3850;
   --board:#1f2738; --cell:#283247; --accent:#8f9cf5; --accent-ink:#10141c;
   --t0:#f0714c; --t1:#2fbfa4; --t2:#f2c12e; --t3:#6c9be0;
   --t0s:#4a2a22; --t1s:#1d4440; --t2s:#4a3e15; --t3s:#24344d;
-  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d;
+  --good:#5fd39a; --goodbg:#183428; --warn:#f3b25a; --warnbg:#3b2c16; --bad:#f0808d; --badbg:#3d1d24;
   --shadow:0 10px 30px #00000055; color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -211,6 +211,70 @@ details li{margin:2px 0;font-size:14px}
 .tbl td.n{font-variant-numeric:tabular-nums;font-weight:800}
 .who{display:flex;gap:9px;align-items:center}
 
+/* ---------- Introdução ---------- */
+.intro{padding-bottom:40px}
+.introcard{max-width:1000px;margin:0 auto;display:grid;gap:18px}
+.introtop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dots{display:flex;gap:6px}
+.dotbtn{width:34px;height:9px;border-radius:99px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dotbtn.on{background:var(--accent)}
+.dotbtn.seen{background:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.slide{display:grid;gap:16px;align-content:start;min-height:470px}
+.slide h2{font-size:clamp(26px,3.4vw,36px)}
+.lead{font-size:17px;max-width:68ch;margin:0}
+.introNav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+.introNav .row{margin-left:auto}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.hellochars{display:flex;gap:14px;flex-wrap:wrap}
+.flow5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.stepc{background:var(--tcs);border:2px solid var(--tc);border-radius:14px;padding:12px;display:grid;gap:4px;align-content:start}
+.stepc .ic{font-size:28px;line-height:1}
+.stepc b{font-family:var(--display);font-size:18px;line-height:1.1}
+.stepc span{font-size:14px}
+.factors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fac{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px}
+.fac b{font-family:var(--display);font-size:17px}
+.fac span{font-size:13.5px;color:var(--muted)}
+.iscale{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.isc{border:2px solid var(--line);border-radius:12px;background:var(--surface2);padding:8px 4px;text-align:center}
+.isc b{display:block;font-family:var(--display);font-size:26px;line-height:1.1;color:var(--accent)}
+.isc small{display:block;font-size:11.5px;line-height:1.2;color:var(--muted)}
+.isc.hl{border-color:var(--accent);background:var(--surface)}
+.distex{display:flex;gap:10px;flex-wrap:wrap}
+.distex span{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:700}
+.distex b{font-family:var(--display);color:var(--accent);font-size:18px}
+.irows{display:grid;gap:8px}
+.ir{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.ir .ic{font-size:26px;text-align:center;line-height:1}
+.ir b{display:block;font-family:var(--display);font-size:17px;line-height:1.2}
+.ir small{color:var(--muted);display:block}
+.pill{font-family:var(--display);font-weight:800;font-size:17px;padding:2px 12px;border-radius:99px;background:var(--goodbg);color:var(--good);white-space:nowrap}
+.pill.neg{background:var(--badbg);color:var(--bad)}
+.pill.neu{background:var(--surface);border:1px solid var(--line);color:var(--accent)}
+.pills{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.box{background:var(--surface2);border-radius:14px;padding:12px 14px;display:grid;gap:4px;align-content:start}
+.box b{font-family:var(--display);font-size:17px}
+.box span{font-size:14px;color:var(--muted)}
+.itbl{width:100%;border-collapse:collapse;font-size:15px}
+.itbl th,.itbl td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center}
+.itbl th:first-child,.itbl td:first-child{text-align:left}
+.itbl th{font-family:var(--display);font-size:16px}
+.itbl th.f{background:var(--t1s)}.itbl th.m{background:var(--t2s)}.itbl th.d{background:var(--badbg)}
+.itbl td.v{font-family:var(--display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+.itbl td.z{color:var(--muted);font-weight:600}
+.maxbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;font-weight:700}
+.maxbar .pill{background:var(--t2);color:#1c2333}
+.ichars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ich{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:14px;border-radius:16px;background:var(--tcs);border:2px solid var(--tc)}
+.ich h3{font-size:21px}
+.ich .role{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.ich p{margin:6px 0 0}
+.ich .tip{font-size:13.5px;color:var(--muted);margin-top:6px}
+.tablescroll{overflow-x:auto}
+@media (max-width:900px){.flow5{grid-template-columns:repeat(2,minmax(0,1fr))}.factors{grid-template-columns:repeat(2,minmax(0,1fr))}.slide{min-height:0}}
+@media (max-width:700px){.iscale{grid-template-columns:repeat(4,minmax(0,1fr))}.ichars,.two{grid-template-columns:minmax(0,1fr)}.flow5{grid-template-columns:minmax(0,1fr)}.dotbtn{width:22px}}
+
 footer{text-align:center;color:var(--muted);font-size:12px;padding-block:10px 26px}
 
 @media (max-width:980px){.game{grid-template-columns:minmax(0,1fr)}.board{max-width:600px;margin:0 auto}}
@@ -225,11 +289,32 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding-block:10px 26
     <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div><h1>Estimation Arena</h1><p>Tabuleiro de estimativas ágeis para até 4 equipes</p></div>
   </div>
-  <button class="btn ghost themebtn" id="themeBtn" aria-pressed="false">🌙 Modo noturno</button>
+  <div class="row">
+    <button class="btn ghost themebtn" id="rulesBtn">📖 Como jogar</button>
+    <button class="btn ghost themebtn" id="themeBtn" aria-pressed="false">🌙 Modo noturno</button>
+  </div>
 </div>
 
+<!-- ======================= INTRODUÇÃO ======================= -->
+<main class="wrap intro" id="intro">
+  <section class="panel introcard" aria-live="polite">
+    <div class="introtop">
+      <div class="eyebrow" id="introStep">Introdução</div>
+      <div class="dots" id="introDots"></div>
+    </div>
+    <div class="slide" id="introSlide"></div>
+    <div class="introNav">
+      <button class="btn ghost" id="introPrev">← Anterior</button>
+      <div class="row">
+        <button class="btn ghost" id="introSkip">Pular introdução</button>
+        <button class="btn" id="introNext">Próximo →</button>
+      </div>
+    </div>
+  </section>
+</main>
+
 <!-- ======================= CONFIGURAÇÃO ======================= -->
-<main class="wrap setup" id="setup">
+<main class="wrap setup" id="setup" hidden>
   <section class="panel">
     <div class="eyebrow">Passo 1</div>
     <h2>Escolha a dificuldade</h2>
@@ -506,7 +591,7 @@ $("clearHist1").onclick=e=>clearHist(e.target);$("clearHist2").onclick=e=>clearH
 
 /* ---------- Partida ---------- */
 let G=null,tick=null;
-function show(id){["setup","gameScreen","endScreen"].forEach(x=>$(x).hidden=x!==id);window.scrollTo({top:0})}
+function show(id){["intro","setup","gameScreen","endScreen"].forEach(x=>$(x).hidden=x!==id);window.scrollTo({top:0})}
 function cur(){return G.teams[G.turn]}
 
 function startGame(){
@@ -774,6 +859,127 @@ function endGame(reason){
 $("againBtn").onclick=startGame;
 $("setupBtn").onclick=()=>{renderSetup();show("setup")};
 
+/* ---------- Introdução ---------- */
+const lvlNames=["Acerto exato","1 posição","2 posições","3 ou mais"];
+const charTips=["Equipes que discutem bem o imprevisto e revisam com cuidado.","Equipes que querem chegar primeiro ao centro e ao Desafio da Sprint.","Partidas com 3 ou 4 equipes, em que as capturas são frequentes.","Equipes que gostam de priorizar e planejar a Sprint."];
+const scaleLbl={1:"Muito pequeno",2:"Pequeno",3:"Simples",5:"Moderado",8:"Complexo",13:"Muito complexo",21:"Extremo"};
+const ir=(ic,t,d,p)=>`<div class="ir"><span class="ic">${ic}</span><div><b>${t}</b><small>${d}</small></div>${p}</div>`;
+const pill=(v,c="")=>`<span class="pill ${c}">${v}</span>`;
+const SLIDES=[
+{t:"Bem-vindo à Estimation Arena",h:()=>`
+  <p class="lead">Um jogo de tabuleiro para praticar estimativas ágeis. As equipes estimam histórias de usuário em Story Points, enfrentam imprevistos e avançam pelo tabuleiro. Ganha quem somar mais pontos.</p>
+  <div class="facts"><span class="chip">👥 1 a 4 equipes no mesmo aparelho</span><span class="chip">🃏 ${stories.length} histórias de usuário</span><span class="chip">⏱️ Timer de 5 minutos</span><span class="chip">🎚️ 3 níveis de dificuldade</span><span class="chip">🏆 Ranking ao final</span></div>
+  <div class="hellochars">${CHARS.map((c,i)=>`<span class="av" style="--tc:var(--t${i});--s:76px"><span class="em">${c.emoji}</span></span>`).join("")}</div>
+  <p class="muted" style="margin:0">Nas próximas telas você vê como é uma rodada, como os pontos são calculados e o que cada personagem tem de especial. A leitura leva uns 2 minutos.</p>`},
+{t:"Como é uma rodada",h:()=>`
+  <p class="lead">As equipes jogam uma de cada vez, em ordem. Na sua vez, a equipe passa por cinco etapas:</p>
+  <div class="flow5">
+    <div class="stepc" style="--tc:var(--t0);--tcs:var(--t0s)"><span class="ic">🎲</span><b>1. Lance o dado</b><span>O peão anda de 1 a 6 casas.</span></div>
+    <div class="stepc" style="--tc:var(--t1);--tcs:var(--t1s)"><span class="ic">🃏</span><b>2. Puxe a carta</b><span>Leia a história e escolha a estimativa inicial.</span></div>
+    <div class="stepc" style="--tc:var(--t2);--tcs:var(--t2s)"><span class="ic">⚠️</span><b>3. Imprevisto</b><span>Um evento muda o cenário. Revise ou mantenha a estimativa.</span></div>
+    <div class="stepc" style="--tc:var(--t3);--tcs:var(--t3s)"><span class="ic">🏆</span><b>4. Pontue</b><span>O jogo compara sua estimativa com a referência.</span></div>
+    <div class="stepc" style="--tc:var(--accent);--tcs:var(--surface2)"><span class="ic">🚀</span><b>5. Casas extras</b><span>Quem estima bem anda mais e passa a vez.</span></div>
+  </div>
+  <div class="two">
+    <div class="box"><b>Quando a partida termina?</b><span>Quando todas as equipes jogam as rodadas combinadas (2 a 5), quando o tempo acaba ou quando vocês encerram.</span></div>
+    <div class="box"><b>Dica para a equipe</b><span>Conversem antes de escolher. Uma boa estimativa vem com uma boa justificativa.</span></div>
+  </div>`},
+{t:"Story Points e a escala",h:()=>`
+  <p class="lead">Story Points medem o esforço <b>relativo</b> de uma história. Eles não são horas nem dias. Para escolher, pense em quatro fatores juntos:</p>
+  <div class="factors">
+    <div class="fac"><b>🧩 Complexidade</b><span>Quão difícil é encontrar e implementar a solução?</span></div>
+    <div class="fac"><b>📦 Volume</b><span>Quantas etapas, regras e componentes existem?</span></div>
+    <div class="fac"><b>❔ Incerteza</b><span>Quanto ainda não sabemos sobre requisitos e solução?</span></div>
+    <div class="fac"><b>🔗 Riscos</b><span>Há integrações, sistemas legados ou dependências?</span></div>
+  </div>
+  <div class="iscale">${SCALE.map(v=>`<div class="isc"><b>${v}</b><small>${scaleLbl[v]}</small></div>`).join("")}</div>
+  <p style="margin:0"><b>Importante:</b> o jogo mede o erro em <b>posições da escala</b>, não na diferença de SP.</p>
+  <div class="distex"><span><b>3 → 5</b> = 1 posição</span><span><b>8 → 13</b> = 1 posição</span><span><b>5 → 13</b> = 2 posições</span></div>`},
+{t:"Pontos da carta de história",h:()=>`
+  <p class="lead">Cada carta soma três partes. A principal é a <b>precisão</b>: a distância entre a estimativa revisada e a referência depois do imprevisto.</p>
+  <div class="tablescroll"><table class="itbl"><thead><tr><th>Precisão</th><th class="f">Fácil</th><th class="m">Médio</th><th class="d">Difícil</th></tr></thead><tbody>
+  ${lvlNames.map((n,i)=>`<tr><td>${n}</td>${["facil","medio","dificil"].map(k=>`<td class="v ${DIFF[k].table[i]?"":"z"}">${DIFF[k].table[i]}</td>`).join("")}</tr>`).join("")}
+  </tbody></table></div>
+  <div class="two">
+    <div class="box"><b>🔍 Leitura inicial: +${DIFF.facil.initBonus} (fácil e médio) ou +${DIFF.dificil.initBonus} (difícil)</b><span>A estimativa inicial bateu com a referência de antes do imprevisto.</span></div>
+    <div class="box"><b>🔁 Revisão: +3</b><span>A equipe mudou e chegou mais perto, ou manteve uma estimativa que já estava certa.</span></div>
+  </div>
+  <div class="maxbar"><span>Máximo por carta</span><span style="flex:1"></span>Fácil e médio ${pill(DIFF.medio.table[0]+DIFF.medio.initBonus+3)} Difícil ${pill(DIFF.dificil.table[0]+DIFF.dificil.initBonus+3)}</div>
+  <p class="muted" style="margin:0"><b>Exemplo (médio):</b> em "Login de usuário", a referência é 3 SP antes do imprevisto e 5 SP depois. Quem escolhe 3 e revisa para 5 faz 10 + 2 + 3 = <b>15 pontos</b>.</p>`},
+{t:"Andando no tabuleiro",h:()=>`
+  <p class="lead">Cada equipe tem um peão que sai da casa ★ da sua cor e dá a volta até o centro. São ${LAST} casas no total.</p>
+  <div class="irows">
+    ${ir("🎲","Dado","No início de toda jogada.",pill("1 a 6","neu"))}
+    ${ir("🎯","Acerto exato na carta","Casas extras depois da pontuação.",pill("+3"))}
+    ${ir("👌","Errou por 1 posição","Casas extras depois da pontuação.",pill("+1"))}
+    ${ir("❓","Casa de imprevisto","Um efeito é sorteado quando o peão para nela.",`<div class="pills">${pill("+2")}${pill("+1")}${pill("−1","neg")}${pill("−3","neg")}</div>`)}
+    ${ir("💥","Ser capturado","Outra equipe parou na sua casa. Você volta casas conforme o nível.",`<div class="pills">${pill("−"+DIFF.facil.capture,"neg")}${pill("−"+DIFF.medio.capture,"neg")}${pill("−"+DIFF.dificil.capture,"neg")}</div>`)}
+    ${ir("★","Casa segura","Ninguém é capturado nas casas com estrela.",pill("seguro","neu"))}
+  </div>
+  <p class="muted" style="margin:0">Na captura, os valores são para fácil, médio e difícil. Não é preciso tirar o número exato no dado para entrar no centro.</p>`},
+{t:"Pontos fora da carta",h:()=>`
+  <p class="lead">O tabuleiro também dá e tira pontos.</p>
+  <div class="irows">
+    ${ir("💥","Capturar outra equipe","Parar na casa de outra equipe, fora das casas ★.",pill("+2"))}
+    ${ir("❓","Casa de imprevisto","Retrospectiva produtiva, daily bem conduzida, bug em produção...",`<div class="pills">${pill("+3")}${pill("+1")}${pill("−2","neg")}</div>`)}
+    ${ir("🏁","Chegar ao centro","A equipe termina o percurso e libera o Desafio da Sprint.",pill("+15"))}
+    ${ir("📋","Desafio da Sprint","Escolher histórias até 30 SP. Vale 5 + (SP ÷ 3). Com 30 SP, vale 15. Acima de 30 SP, vale 0.",pill("até +15"))}
+  </div>
+  <div class="two">
+    <div class="box"><b>🛡️ Sem pontos negativos</b><span>A pontuação de uma equipe nunca fica abaixo de zero.</span></div>
+    <div class="box"><b>🥇 Desempate</b><span>Vence quem está mais avançado no tabuleiro e, depois, quem tem mais acertos exatos.</span></div>
+  </div>`},
+{t:"Personagens e vantagens",h:()=>`
+  <p class="lead">Cada equipe escolhe um personagem, e cada personagem só pode ser usado por uma equipe na partida. Cada um tem uma vantagem própria:</p>
+  <div class="ichars">${CHARS.map((c,i)=>`<div class="ich" style="--tc:var(--t${i});--tcs:var(--t${i}s)"><span class="av" style="--tc:var(--t${i});--s:64px"><span class="em">${c.emoji}</span></span><div><h3>${c.name}</h3><div class="role">${c.role}</div><p><b>Vantagem:</b> ${c.perk}</p><div class="tip">Boa escolha para: ${charTips[i]}</div></div></div>`).join("")}</div>`},
+{t:"Níveis e timer",h:()=>`
+  <p class="lead">Escolham o nível de acordo com a experiência da turma.</p>
+  <div class="tablescroll"><table class="itbl"><thead><tr><th></th><th class="f">Fácil</th><th class="m">Médio</th><th class="d">Difícil</th></tr></thead><tbody>
+    <tr><td>Histórias</td><td>baixa e média complexidade</td><td>todas</td><td>todas</td></tr>
+    <tr><td>Ajuda na carta</td><td>faixa de SP esperada</td><td>nível de complexidade</td><td>nenhuma</td></tr>
+    <tr><td>Erro tolerado</td><td>alto</td><td>médio</td><td>só o acerto exato rende</td></tr>
+    <tr><td>Captura</td><td>volta ${DIFF.facil.capture} casas</td><td>volta ${DIFF.medio.capture} casas</td><td>volta ${DIFF.dificil.capture} casas</td></tr>
+  </tbody></table></div>
+  <div class="two">
+    <div class="box"><b>⏱️ Timer de 5 minutos</b><span>Pode valer para a partida inteira ou para cada jogada. No modo por jogada, quem estoura o tempo faz 0 pontos na rodada.</span></div>
+    <div class="box"><b>⏸️ Pausa e regras</b><span>O botão Pausar para o relógio. O botão "Como jogar", no topo, reabre esta introdução e pausa a partida.</span></div>
+  </div>`}
+];
+let introIdx=0,introReturn="setup",introPausedBefore=false,introSeen=new Set([0]);
+function renderIntro(){
+  const sl=SLIDES[introIdx],last=introIdx===SLIDES.length-1;
+  introSeen.add(introIdx);
+  $("introStep").textContent=`Introdução · ${introIdx+1} de ${SLIDES.length}`;
+  $("introDots").innerHTML=SLIDES.map((x,i)=>`<button class="dotbtn ${i===introIdx?"on":introSeen.has(i)?"seen":""}" data-i="${i}" aria-label="Ir para: ${x.t}" ${i===introIdx?'aria-current="step"':""}></button>`).join("");
+  $("introSlide").innerHTML=`<h2>${sl.t}</h2>${sl.h()}`;
+  $("introPrev").disabled=introIdx===0;
+  const back=introReturn==="gameScreen"?"Voltar ao jogo":introReturn==="endScreen"?"Voltar ao ranking":"Montar as equipes →";
+  $("introNext").textContent=last?back:"Próximo →";
+  $("introSkip").textContent=introReturn==="setup"?"Pular introdução":"Fechar";
+  $("introSkip").hidden=last;
+}
+function goIntro(i){introIdx=Math.max(0,Math.min(SLIDES.length-1,i));renderIntro();if($("intro").getBoundingClientRect().top<0)window.scrollTo({top:0})}
+function openIntro(ret){
+  if(!$("intro").hidden)return;
+  introReturn=ret;introIdx=0;
+  if(ret==="gameScreen"&&G&&!G.over){introPausedBefore=G.paused;G.paused=true;$("pauseBtn").textContent="Continuar"}
+  renderIntro();show("intro");
+}
+function closeIntro(){
+  show(introReturn);
+  if(introReturn==="gameScreen"&&G&&!G.over){G.paused=introPausedBefore;$("pauseBtn").textContent=G.paused?"Continuar":"Pausar";renderPlay()}
+}
+$("introPrev").onclick=()=>goIntro(introIdx-1);
+$("introNext").onclick=()=>introIdx===SLIDES.length-1?closeIntro():goIntro(introIdx+1);
+$("introSkip").onclick=closeIntro;
+$("introDots").addEventListener("click",e=>{const b=e.target.closest(".dotbtn");if(b)goIntro(+b.dataset.i)});
+document.addEventListener("keydown",e=>{
+  if($("intro").hidden||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+  if(e.key==="ArrowRight"&&introIdx<SLIDES.length-1)goIntro(introIdx+1);
+  if(e.key==="ArrowLeft"&&introIdx>0)goIntro(introIdx-1);
+});
+$("rulesBtn").onclick=()=>openIntro(["setup","gameScreen","endScreen"].find(x=>!$(x).hidden)||"setup");
+
 /* ---------- Tema diurno / noturno ---------- */
 const themeBtn=$("themeBtn");
 function currentTheme(){const a=document.documentElement.getAttribute("data-theme");if(a==="dark"||a==="light")return a;return matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}
@@ -785,6 +991,7 @@ themeBtn.onclick=()=>{const t=currentTheme()==="dark"?"light":"dark";applyTheme(
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",labelTheme);
 
 renderSetup();
+renderIntro();
 </script>
 </body>
 </html>
